@@ -1,0 +1,61 @@
+Start by setting up the docker using:
+
+ docker-compose build
+
+Then you start the docker using
+docker-compose up
+
+Now you have a fully set up dock. We can then get the ID of the containers using this command:
+dockps 
+
+This gives us the following addreses:
+30c5a47e5f4b  host1-192.168.60.5
+81a659309078  host3-192.168.60.7
+899c751c5b81  host2-192.168.60.6
+be9b41db15e4  hostA-10.9.0.5
+f5f44c584472  seed-router
+
+We can now use the command docksh ID# to start the sheell on that container. If we want to use 81a659309078  host3-192.168.60.7 we write the following:
+docksh 81
+
+We are now root in that shell and can do our tests from there. That is the setup for our tests so we have a replicable setup if we need to redo tests later.
+		
+TASK 2.A Protecting the Router:
+
+We start by accessing our router by typing in the following command:
+docksh f5f
+
+then we enter the following commandswhile we are in the router
+
+iptables -A INPUT -p icmp --icmp-type echo-request -j ACCEPT
+iptables -A OUTPUT -p icmp --icmp-type echo-reply -j ACCEPT
+iptables -P OUTPUT DROP
+iptables -P INPUT DROP
+
+Then we open a new terminal and enter HostA using the following command:
+docksh be9
+
+Then we type in the following command:
+ping router
+
+This then pings the router since that is the only thing we have not blocked
+
+As for telnet then we write the following command:
+telnet router
+
+Here it is unable to connect to the remote host because the connection timed out. This is becacuse the action is dropped as soon as it tries to output it
+
+If we now return to the router and remove the commands and reset the docker back to where it was before using these commands:
+
+iptables -F
+iptables -P OUTPUT ACCEPT
+iptables -P INPUT ACCEPT
+
+We can now use telnet again
+
+Task 2.B
+
+We start by entering our router, then we enter the following 3 commands:
+iptables -A FORWARD -p icmp --icmp-type echo-request -s 192.168.60.0/24 -d  10.9.0.0/24 -j ACCEPT
+iptables -A FORWARD -p icmp --icmp-type echo-reply -s 10.9.0.0/24 -d  192.168.60.0/24 -j ACCEPT
+iptables -P FORWARD DROP
